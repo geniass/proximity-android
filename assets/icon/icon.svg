@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Material Design icon style with 24x24 viewport -->
+  
+  <!-- Radar circles -->
+  <circle cx="12" cy="12" r="10" fill="none" stroke="#1976D2" stroke-width="0.75" opacity="0.7"/>
+  <circle cx="12" cy="12" r="7" fill="none" stroke="#1976D2" stroke-width="0.75" opacity="0.8"/>
+  <circle cx="12" cy="12" r="4" fill="none" stroke="#1976D2" stroke-width="0.75" opacity="0.9"/>
+  
+  <!-- Radar sweep -->
+  <path d="M12 12 L12 2 A10 10 0 0 1 20.6 7 Z" fill="#1976D2" opacity="0.4"/>
+  
+  <!-- Center dot -->
+  <circle cx="12" cy="12" r="1.5" fill="#1976D2"/>
+  
+  <!-- POI blip on radar -->
+  <circle cx="17" cy="7" r="1.5" fill="#FF5722" opacity="0.9">
+    <!-- Subtle pulse effect for the POI -->
+    <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
