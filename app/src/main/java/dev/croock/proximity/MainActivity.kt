@@ -41,13 +41,22 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import dev.croock.proximity.viewmodel.TripsListViewModel
+import dev.croock.proximity.viewmodel.TripsListViewModelFactory
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import dev.croock.proximity.data.TripEntity
 
 // Define navigation routes
 object NavRoutes {
     const val TRIPS_LIST = "tripsList"
-    const val PLACES_OF_INTEREST = "placesOfInterest/{tripName}"
+    const val PLACES_OF_INTEREST = "placesOfInterest/{tripId}/{tripName}"
 
-    fun placesOfInterestRoute(tripName: String) = "placesOfInterest/$tripName"
+    fun placesOfInterestRoute(tripId: Long, tripName: String) = "placesOfInterest/$tripId/$tripName"
 }
 
 class MainActivity : ComponentActivity() {
@@ -69,13 +78,15 @@ fun AppNavigator(navController: NavHostController) {
         composable(NavRoutes.TRIPS_LIST) {
             TripsListScreen(
                 onTripClick = { trip ->
-                    navController.navigate(NavRoutes.placesOfInterestRoute(trip.name))
+                    navController.navigate(NavRoutes.placesOfInterestRoute(trip.id, trip.name))
                 }
             )
         }
         composable(NavRoutes.PLACES_OF_INTEREST) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")?.toLongOrNull() ?: 0L
             val tripName = backStackEntry.arguments?.getString("tripName") ?: "Trip Details"
             PlacesOfInterestScreen(
+                tripId = tripId,
                 tripName = tripName,
                 onNavigateBack = { navController.popBackStack() },
                 onOpenInMaps = { /* TODO */ },
@@ -106,14 +117,10 @@ private fun TripProgressIndicator(progress: Float, modifier: Modifier = Modifier
 }
 
 @Composable
-fun TripsListScreen(onTripClick: (Trip) -> Unit) {
-    val trips = listOf(
-        Trip.create("Tokyo", LocalDate.of(2025, 4, 1), LocalDate.of(2025, 4, 30)),
-        Trip.create("Weekend Getaway", LocalDate.of(2024, 6, 14), LocalDate.of(2024, 6, 16)), // Example of a past trip
-        Trip.create("Upcoming Conference", LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 3)), // Example of an ongoing/future trip (relative to a fixed current date if not using LocalDate.now())
-        Trip.create("Day Trip", LocalDate.of(2024, 6, 15), LocalDate.of(2024, 6, 15)), // Example of a single day trip
-        Trip.create("Future Adventure", null, null) // Example of a trip with no dates
-    )
+fun TripsListScreen(onTripClick: (TripEntity) -> Unit) {
+    val context = LocalContext.current.applicationContext as Application
+    val viewModel: TripsListViewModel = viewModel(factory = TripsListViewModelFactory(context))
+    val trips by viewModel.trips.collectAsState()
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { /* TODO: Add trip */ }) {
@@ -131,20 +138,21 @@ fun TripsListScreen(onTripClick: (Trip) -> Unit) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp) // Card margin
-                        .clickable { onTripClick(trip) } // Make card clickable
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable { onTripClick(trip) }
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp), // Content padding inside the card
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(trip.name, style = MaterialTheme.typography.titleLarge)
                             Spacer(modifier = Modifier.size(4.dp))
-                            if (trip.dateRangeString.isNotBlank()) {
-                                Text(trip.dateRangeString, style = MaterialTheme.typography.bodyMedium)
+                            val dateRangeString = if (trip.startDate != null && trip.endDate != null) "${trip.startDate} - ${trip.endDate}" else ""
+                            if (dateRangeString.isNotBlank()) {
+                                Text(dateRangeString, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
 

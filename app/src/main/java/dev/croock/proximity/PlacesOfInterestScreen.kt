@@ -1,5 +1,6 @@
 package dev.croock.proximity
 
+import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,10 +15,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.croock.proximity.ui.theme.ProximityTheme
+import dev.croock.proximity.viewmodel.PlacesOfInterestViewModel
+import dev.croock.proximity.viewmodel.PlacesOfInterestViewModelFactory
+import dev.croock.proximity.viewmodel.toDomain
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.croock.proximity.viewmodel.toEntity
 
 // Data class for Point of Interest
 data class PointOfInterest(
@@ -30,20 +39,19 @@ data class PointOfInterest(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlacesOfInterestScreen(
+    tripId: Long,
     tripName: String,
     onNavigateBack: () -> Unit,
     onOpenInMaps: (PointOfInterest) -> Unit,
     onDeletePlace: (PointOfInterest) -> Unit,
     onTogglePlaceStatus: (PointOfInterest, Boolean) -> Unit
 ) {
-    // Sample data - replace with actual data from ViewModel or repository
-    val places = remember {
-        mutableStateListOf(
-            PointOfInterest("1", "Nintendo Tokyo", "Japan, 〒150-0042 Tokyo, Shibuya, Udagawachō, 15...", true),
-            PointOfInterest("2", "Starbucks Reserve Roastery Tokyo", "2-chōme-19-23 Aobadai, Meguro City, Tokyo 153-0...", false),
-            PointOfInterest("3", "GLITCH COFFEE & ROASTERS", "Japan, 〒101-0054 Tokyo, Chiyoda City, Kanda Nishi...", true)
-        )
-    }
+    val context = LocalContext.current.applicationContext as Application
+    val viewModel: PlacesOfInterestViewModel = viewModel(
+        factory = PlacesOfInterestViewModelFactory(context, tripId)
+    )
+    val poiEntities by viewModel.pointsOfInterest.collectAsState()
+    val places = poiEntities.map { it.toDomain() }
 
     Scaffold(
         topBar = {
@@ -59,7 +67,7 @@ fun PlacesOfInterestScreen(
                         Icon(Icons.Default.Search, contentDescription = "Search Places")
                     }
                     IconButton(onClick = { /* TODO: Implement view toggle (list/map) */ }) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Toggle Map View") // Changed from Icons.Filled.Public
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Toggle Map View")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -73,21 +81,16 @@ fun PlacesOfInterestScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 8.dp), // Padding for the list itself
+                .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(places, key = { it.id }) { place ->
                 PlaceOfInterestCard(
                     place = place,
                     onOpenInMaps = { onOpenInMaps(place) },
-                    onDeletePlace = { onDeletePlace(place) },
+                    onDeletePlace = { viewModel.deletePlace(place.toEntity(tripId)) },
                     onToggleStatus = { newStatus ->
-                        // Update local state directly for immediate UI feedback
-                        val index = places.indexOf(place)
-                        if (index != -1) {
-                            places[index] = place.copy(isActive = newStatus)
-                        }
-                        onTogglePlaceStatus(place, newStatus)
+                        viewModel.togglePlaceStatus(place.toEntity(tripId), newStatus)
                     }
                 )
             }
@@ -166,6 +169,7 @@ fun PlaceOfInterestCard(
 fun PlacesOfInterestScreenPreview() {
     ProximityTheme {
         PlacesOfInterestScreen(
+            tripId = 1L,
             tripName = "Tokyo",
             onNavigateBack = {},
             onOpenInMaps = {},
