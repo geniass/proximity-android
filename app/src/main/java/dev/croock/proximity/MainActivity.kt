@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,14 +30,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import dev.croock.proximity.ui.theme.ProximityTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+
+// Define navigation routes
+object NavRoutes {
+    const val TRIPS_LIST = "tripsList"
+    const val PLACES_OF_INTEREST = "placesOfInterest/{tripName}"
+
+    fun placesOfInterestRoute(tripName: String) = "placesOfInterest/$tripName"
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,8 +56,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ProximityTheme {
-                TripsListScreen()
+                val navController = rememberNavController()
+                AppNavigator(navController = navController)
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavigator(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = NavRoutes.TRIPS_LIST) {
+        composable(NavRoutes.TRIPS_LIST) {
+            TripsListScreen(
+                onTripClick = { trip ->
+                    navController.navigate(NavRoutes.placesOfInterestRoute(trip.name))
+                }
+            )
+        }
+        composable(NavRoutes.PLACES_OF_INTEREST) { backStackEntry ->
+            val tripName = backStackEntry.arguments?.getString("tripName") ?: "Trip Details"
+            PlacesOfInterestScreen(
+                tripName = tripName,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenInMaps = { /* TODO */ },
+                onDeletePlace = { /* TODO */ },
+                onTogglePlaceStatus = { _, _ -> /* TODO */ }
+            )
         }
     }
 }
@@ -70,7 +106,7 @@ private fun TripProgressIndicator(progress: Float, modifier: Modifier = Modifier
 }
 
 @Composable
-fun TripsListScreen() {
+fun TripsListScreen(onTripClick: (Trip) -> Unit) {
     val trips = listOf(
         Trip.create("Tokyo", LocalDate.of(2025, 4, 1), LocalDate.of(2025, 4, 30)),
         Trip.create("Weekend Getaway", LocalDate.of(2024, 6, 14), LocalDate.of(2024, 6, 16)), // Example of a past trip
@@ -96,6 +132,7 @@ fun TripsListScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp) // Card margin
+                        .clickable { onTripClick(trip) } // Make card clickable
                 ) {
                     Row(
                         modifier = Modifier
@@ -128,7 +165,7 @@ fun TripsListScreen() {
 }
 
 // Minimal Trip data class
-private data class Trip(
+data class Trip(
     val name: String,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null
@@ -183,6 +220,6 @@ private fun calculateTripProgress(
 @Composable
 fun TripsListScreenPreview() {
     ProximityTheme {
-        TripsListScreen()
+        TripsListScreen(onTripClick = {})
     }
 }
