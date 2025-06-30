@@ -30,6 +30,8 @@ data class PointOfInterestEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "trip_id") val tripId: Long,
     @ColumnInfo(name = "name") val name: String,
-    @ColumnInfo(name = "address") val address: String,
+    @ColumnInfo(name = "google_place_id") val googlePlaceId: String,
+    @ColumnInfo(name = "lat") val lat: Double,
+    @ColumnInfo(name = "lon") val lon: Double,
     @ColumnInfo(name = "is_active") val isActive: Boolean
 )

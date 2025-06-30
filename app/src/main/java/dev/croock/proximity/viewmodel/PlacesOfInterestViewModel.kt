@@ -32,6 +32,20 @@ class PlacesOfInterestViewModel(
             repository.deletePointOfInterest(poi)
         }
     }
+
+    fun addPlace(tripId: Long, googlePlaceId: String, name: String, lat: Double, lon: Double, isActive: Boolean = true) {
+        viewModelScope.launch {
+            val poi = dev.croock.proximity.PointOfInterest(
+                name = name,
+                id = "",
+                googlePlaceId = googlePlaceId,
+                lat = lat,
+                lon = lon,
+                isActive = isActive
+            ).toEntity(tripId)
+            repository.insertPointOfInterest(poi)
+        }
+    }
 }
 
 class PlacesOfInterestViewModelFactory(

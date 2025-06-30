@@ -6,7 +6,9 @@ import dev.croock.proximity.PointOfInterest
 fun PointOfInterestEntity.toDomain(): PointOfInterest = PointOfInterest(
     id = id.toString(),
     name = name,
-    address = address,
+    googlePlaceId = googlePlaceId,
+    lat = lat,
+    lon = lon,
     isActive = isActive
 )
 
@@ -14,6 +16,8 @@ fun PointOfInterest.toEntity(tripId: Long): PointOfInterestEntity = PointOfInter
     id = id.toLongOrNull() ?: 0L,
     tripId = tripId,
     name = name,
-    address = address,
+    googlePlaceId = googlePlaceId,
+    lat = lat,
+    lon = lon,
     isActive = isActive
 )

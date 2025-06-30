@@ -14,7 +14,7 @@ import java.time.LocalDate
 
 @Database(
     entities = [TripEntity::class, PointOfInterestEntity::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -33,6 +33,7 @@ abstract class ProximityDatabase : RoomDatabase() {
                     ProximityDatabase::class.java,
                     "proximity_database"
                 )
+                    .fallbackToDestructiveMigration(false)
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
