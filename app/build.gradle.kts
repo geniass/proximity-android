@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.activity.ktx)
     // Jetpack Compose integration
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.fragment.compose)
 
     // Views/Fragments integration
     implementation(libs.androidx.navigation.fragment)
