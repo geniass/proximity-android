@@ -12,6 +12,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.croock.proximity.data.ProximityDatabase
 import dev.croock.proximity.util.NotificationUtils.showNotification
+import dev.croock.proximity.util.PlaceNotificationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -43,7 +44,7 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                             CoroutineScope(Dispatchers.IO).launch {
                                 val db = ProximityDatabase.getDatabase(context)
                                 val trips = db.tripDao().getAllTrips().firstOrNull() ?: emptyList()
-                                val allClosePlaces = mutableListOf<String>()
+                                val allClosePlaces = mutableListOf<PlaceNotificationInfo>()
                                 trips.forEach { trip ->
                                     val places = db.pointOfInterestDao().getPointsOfInterestForTrip(trip.id).firstOrNull() ?: emptyList()
                                     val closePlaces = places.filter { poi ->
@@ -56,11 +57,16 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                                     }
                                     closePlaces.forEach { poi ->
                                         Log.i(TAG, "Place within 500m: ${'$'}{poi.name} at ${'$'}{poi.lat},${'$'}{poi.lon} (Trip: ${'$'}{trip.name})")
-                                        allClosePlaces.add("${poi.name} (${trip.name})")
+                                        allClosePlaces.add(PlaceNotificationInfo(
+                                            name = poi.name,
+                                            tripName = trip.name,
+                                            lat = poi.lat,
+                                            lon = poi.lon
+                                        ))
                                     }
                                 }
                                 if (allClosePlaces.isNotEmpty()) {
-                                    showNotification(context, allClosePlaces)
+                                    showNotification(context, allClosePlaces, currentLocation)
                                 }
                                 // Re-create geofence at new location
                                 GeofenceUtils.replaceGeofence(context, currentLocation.latitude, currentLocation.longitude)

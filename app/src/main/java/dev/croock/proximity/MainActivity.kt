@@ -62,6 +62,7 @@ import dev.croock.proximity.data.ProximityDatabase
 import dev.croock.proximity.data.TripEntity
 import dev.croock.proximity.ui.theme.ProximityTheme
 import dev.croock.proximity.util.NotificationUtils.showNotification
+import dev.croock.proximity.util.PlaceNotificationInfo
 import dev.croock.proximity.viewmodel.TripsListViewModel
 import dev.croock.proximity.viewmodel.TripsListViewModelFactory
 import kotlinx.coroutines.CoroutineScope
@@ -202,7 +203,7 @@ class MainActivity : ComponentActivity() {
                         CoroutineScope(Dispatchers.IO).launch {
                             val db = ProximityDatabase.getDatabase(this@MainActivity)
                             val trips = db.tripDao().getAllTrips().firstOrNull() ?: emptyList()
-                            val allClosePlaces = mutableListOf<String>()
+                            val allClosePlaces = mutableListOf<PlaceNotificationInfo>()
                             trips.forEach { trip ->
                                 val places = db.pointOfInterestDao().getPointsOfInterestForTrip(trip.id).firstOrNull() ?: emptyList()
                                 val closePlaces = places.filter { poi ->
@@ -215,11 +216,16 @@ class MainActivity : ComponentActivity() {
                                 }
                                 closePlaces.forEach { poi ->
                                     Log.i(TAG, "Place within 500m: ${'$'}{poi.name} at ${'$'}{poi.lat},${'$'}{poi.lon} (Trip: ${'$'}{trip.name})")
-                                    allClosePlaces.add("${poi.name} (${trip.name})")
+                                    allClosePlaces.add(PlaceNotificationInfo(
+                                        name = poi.name,
+                                        tripName = trip.name,
+                                        lat = poi.lat,
+                                        lon = poi.lon
+                                    ))
                                 }
                             }
                             if (allClosePlaces.isNotEmpty()) {
-                                showNotification(this@MainActivity, allClosePlaces)
+                                showNotification(this@MainActivity, allClosePlaces, currentLocation)
                             }
                             // Re-create geofence at new location
                             GeofenceUtils.replaceGeofence(this@MainActivity, currentLocation.latitude, currentLocation.longitude)
