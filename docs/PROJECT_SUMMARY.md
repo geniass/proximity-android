@@ -89,6 +89,9 @@ If further battery optimization is needed, these strategies could be implemented
 
 These optimizations would maintain the app's core functionality while further reducing battery impact for users with extensive POI collections or those prioritizing battery life.
 
+## Stretch Goals
+- **Landmark-based directions** - Instead of using cardinal directions (north, south, etc.), use nearby landmarks as directional references (e.g., "350m toward Central Station" or "200m past the McDonald's"). This would require querying nearby places from the Google Places API based on current location and calculating which landmark is in the same direction as the target POI.
+
 ## Architecture Overview
 - **No Foreground Service:** All background work is handled via system-managed PendingIntent and BroadcastReceiver, not a persistent service.
 - **NotificationService:** Centralized notification logic for all app components.
