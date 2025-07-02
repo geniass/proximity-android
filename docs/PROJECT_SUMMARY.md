@@ -12,11 +12,24 @@ Proximity is a native Android application designed to help users discover and be
 - **Significant Movement Detection:** Only triggers notifications for movements of 500+ meters, reducing unnecessary alerts and battery usage.
 
 ## How It Works
-- On app start or device boot, the app registers for activity and location updates using PendingIntent and system receivers (no persistent foreground service).
-- When movement or significant location change is detected, the app processes the event and sends notifications as needed.
-- When the device is stationary for 5+ minutes, GPS tracking is paused; it resumes immediately when movement is detected.
-- All notifications are managed through a centralized NotificationService for consistency.
-- On app start, the app gets the last known position from the system rather than storing it in a database, ensuring up to date location data.
+
+### Geofencing Strategy
+The app uses a single dynamic geofence centered on the user's current location rather than creating individual geofences for each POI. This approach is designed to handle the reality that users may have hundreds or thousands of POIs across multiple trips, while Google limits apps to 100 active geofences maximum.
+
+**Key aspects of the geofencing method:**
+- **Single 200m radius geofence** - Created at the user's current location when the app starts or location changes significantly
+- **EXIT-only trigger** - The app only wakes up when the user exits the geofence (i.e., moves more than 200m from their last known position)
+- **Dynamic repositioning** - When triggered, the app gets the new location, checks all POIs for proximity (within 500m), sends notifications if any are found, then creates a new geofence at the new location
+- **Avoids Google's 100 geofence limit** - By using only one geofence instead of one per POI, the app can handle unlimited POIs without hitting platform restrictions
+- **Reduces complexity** - No need for geofence clustering algorithms, POI prioritization, or complex geofence management logic
+
+This method ensures the app only performs location checks when the user has moved a significant distance, optimizing battery life while maintaining reliable proximity detection for any number of saved places.
+
+### Background Processing
+- On app start or device boot, the app registers for geofence events using PendingIntent and BroadcastReceiver (no persistent foreground service)
+- When the user exits the geofence, the GeofenceTransitionReceiver handles the event and processes proximity checks
+- All notifications are managed through a centralized NotificationUtils for consistency
+- The app gets fresh location data from the system rather than storing stale location data in the database
 
 ## User Interface
 - **Trips List Screen:** Displays all trips with progress indicators, trip details, and options to add or edit trips.
@@ -42,6 +55,39 @@ Proximity is a native Android application designed to help users discover and be
 ## TODO Features
 - Allow distance from POI to be configurable per trip.
 - Allow importing or syncing trips with google maps saved places lists.
+- Trip-aware filtering - Only activate geofences for current/active trips, ignore inactive ones.
+- Cooldown periods - Prevent repeated notifications for same POI within time windows (e.g., 2 hours).
+- Context-aware filtering - Don't notify about restaurants during non-meal hours, or closed venues.
+- Background app limits - Adapt to Android's background execution restrictions on different API levels.
+- Distance and direction info - Show "350m northeast" instead of just place names in notifications.
+- Notification action buttons - Add "Navigate" and "Ignore/Deactivate" buttons to notifications.
+- Notification grouping - Bundle multiple nearby places into one expandable notification.
+- Smart timing - Avoid notification spam with cooldown periods.
+
+## Future Battery Optimization Ideas
+If further battery optimization is needed, these strategies could be implemented:
+
+### Smart Geofence Management
+- **Activity-based activation** - Only create geofences when user is walking/moving; disable during STILL periods
+- **Time-based scheduling** - Pause geofencing during sleep hours (e.g., 11 PM - 7 AM) or user-defined quiet periods
+- **Battery level adaptation** - Increase geofence radius or reduce check frequency when battery is low (<20%)
+
+### Location Strategy Optimization
+- **Adaptive radius** - Increase geofence radius in rural areas (less POI density), decrease in urban areas
+- **Distance-based POI filtering** - Only check POIs within reasonable range (e.g., 10km) instead of all POIs
+- **Movement pattern learning** - Use historical data to predict likely routes and pre-filter relevant POIs
+- **Significant location change** - Use Android's PASSIVE_PROVIDER or significant location changes instead of precise GPS when possible
+
+### Notification Intelligence
+- **Batch processing** - Group multiple nearby POI checks into single location request
+- **Smart wake patterns** - Align processing with other app activities to reduce independent wake-ups
+
+### System Integration
+- **Doze mode compliance** - Ensure proper behavior during Android's deep sleep states
+- **Network usage optimization** - Cache POI data locally to minimize API calls during background processing
+- **Sensor fusion** - Use accelerometer/gyroscope to detect movement before GPS activation
+
+These optimizations would maintain the app's core functionality while further reducing battery impact for users with extensive POI collections or those prioritizing battery life.
 
 ## Architecture Overview
 - **No Foreground Service:** All background work is handled via system-managed PendingIntent and BroadcastReceiver, not a persistent service.
