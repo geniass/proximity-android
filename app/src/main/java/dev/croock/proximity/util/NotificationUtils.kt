@@ -22,6 +22,7 @@ data class PlaceNotificationInfo(
     val tripName: String,
     val lat: Double,
     val lon: Double,
+    val googlePlaceId: String
 )
 
 object NotificationUtils {
@@ -66,6 +67,8 @@ object NotificationUtils {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
 
+            val directionsPendingIntent = MapUtils.googleMapsDirectionsPendingIntent(context, place.name, place.googlePlaceId)
+
             val result = FloatArray(1)
             Location.distanceBetween(
                 userLocation.latitude, userLocation.longitude,
@@ -84,6 +87,7 @@ object NotificationUtils {
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
+                .addAction(R.drawable.ic_launcher_foreground, "Directions", directionsPendingIntent)
                 .build()
 
             notificationManager.notify(SUMMARY_NOTIFICATION_ID + index + 1, notification)

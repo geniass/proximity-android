@@ -64,6 +64,7 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                                                 tripName = trip.name,
                                                 lat = poi.lat,
                                                 lon = poi.lon,
+                                                googlePlaceId = poi.googlePlaceId
                                             )
                                         )
                                     }

@@ -1,7 +1,6 @@
 package dev.croock.proximity
 
 import android.app.Application
-import android.content.Intent
 import android.location.Location
 import android.util.Log
 import android.widget.Toast
@@ -55,7 +54,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -76,6 +74,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
 import dev.croock.proximity.ui.theme.ProximityTheme
+import dev.croock.proximity.util.MapUtils
 import dev.croock.proximity.viewmodel.PlacesOfInterestViewModel
 import dev.croock.proximity.viewmodel.PlacesOfInterestViewModelFactory
 import dev.croock.proximity.viewmodel.toDomain
@@ -297,13 +296,7 @@ fun PlacesOfInterestScreen(
                     PlaceOfInterestCard(
                         place = place,
                         currentLocation = currentLocation,
-                        onOpenInMaps = {
-                            val uri = "https://www.google.com/maps/dir/?api=1&destination=${place.name}&destination_place_id=${place.googlePlaceId}"
-                                .toUri()
-                            val mapIntent = Intent(Intent.ACTION_VIEW, uri)
-                            mapIntent.setPackage("com.google.android.apps.maps")
-                            context.startActivity(mapIntent)
-                        },
+                        onOpenInMaps = { MapUtils.launchGoogleMaps(context, place.name, place.googlePlaceId) },
                         onDeletePlace = { viewModel.deletePlace(place.toEntity(tripId)) },
                         onToggleStatus = { newStatus ->
                             viewModel.togglePlaceStatus(place.toEntity(tripId), newStatus)
