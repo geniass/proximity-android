@@ -55,7 +55,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.locationtest.receiver.GeofenceUtils
+import dev.croock.proximity.util.GeofenceUtils
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.croock.proximity.data.ProximityDatabase
@@ -215,7 +215,7 @@ class MainActivity : ComponentActivity() {
                                     result[0] <= 500
                                 }
                                 closePlaces.forEach { poi ->
-                                    Log.i(TAG, "Place within 500m: ${'$'}{poi.name} at ${'$'}{poi.lat},${'$'}{poi.lon} (Trip: ${'$'}{trip.name})")
+                                    Log.i(TAG, "Place within 500m: ${poi.name} at ${poi.lat},${poi.lon} (Trip: ${trip.name})")
                                     allClosePlaces.add(PlaceNotificationInfo(
                                         name = poi.name,
                                         tripName = trip.name,
