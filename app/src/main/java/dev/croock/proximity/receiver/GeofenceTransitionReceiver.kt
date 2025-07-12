@@ -5,12 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.util.Log
-import com.example.locationtest.receiver.GeofenceUtils
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.croock.proximity.data.ProximityDatabase
+import dev.croock.proximity.util.GeofenceUtils
 import dev.croock.proximity.util.NotificationUtils.showNotification
 import dev.croock.proximity.util.PlaceNotificationInfo
 import kotlinx.coroutines.CoroutineScope
@@ -57,12 +57,14 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                                     }
                                     closePlaces.forEach { poi ->
                                         Log.i(TAG, "Place within 500m: ${'$'}{poi.name} at ${'$'}{poi.lat},${'$'}{poi.lon} (Trip: ${'$'}{trip.name})")
-                                        allClosePlaces.add(PlaceNotificationInfo(
-                                            name = poi.name,
-                                            tripName = trip.name,
-                                            lat = poi.lat,
-                                            lon = poi.lon
-                                        ))
+                                        allClosePlaces.add(
+                                            PlaceNotificationInfo(
+                                                name = poi.name,
+                                                tripName = trip.name,
+                                                lat = poi.lat,
+                                                lon = poi.lon
+                                            )
+                                        )
                                     }
                                 }
                                 if (allClosePlaces.isNotEmpty()) {

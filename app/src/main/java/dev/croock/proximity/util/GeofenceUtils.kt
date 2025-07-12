@@ -1,4 +1,4 @@
-package com.example.locationtest.receiver
+package dev.croock.proximity.util
 
 import android.app.PendingIntent
 import android.content.Context
@@ -8,7 +8,6 @@ import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import dev.croock.proximity.receiver.GeofenceTransitionReceiver
-import kotlin.time.Duration.Companion.minutes
 
 object GeofenceUtils {
     private const val GEOFENCE_RADIUS_METERS = 200f
