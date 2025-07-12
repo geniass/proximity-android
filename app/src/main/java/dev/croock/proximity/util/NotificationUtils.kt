@@ -3,20 +3,25 @@ package dev.croock.proximity.util
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import dev.croock.proximity.Constants
+import dev.croock.proximity.MainActivity
 import dev.croock.proximity.R
 
 data class PlaceNotificationInfo(
     val name: String,
+    val tripId: Long,
     val tripName: String,
     val lat: Double,
-    val lon: Double
+    val lon: Double,
 )
 
 object NotificationUtils {
@@ -47,9 +52,53 @@ object NotificationUtils {
             notificationManager.cancel(SUMMARY_NOTIFICATION_ID + index + 1)
         }
 
-        if (places.size == 1) {
-            // Single notification
-            val place = places.first()
+        places.forEachIndexed { index, place ->
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra(Constants.EXTRA_SHOW_MAP, true)
+                putExtra(Constants.EXTRA_TRIP_ID, place.tripId)
+                putExtra(Constants.EXTRA_TRIP_NAME, place.tripName)
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                SUMMARY_NOTIFICATION_ID + index + 1,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            )
+
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                userLocation.latitude, userLocation.longitude,
+                place.lat, place.lon, result
+            )
+            val bearing = LocationUtils.calculateBearing(userLocation.latitude, userLocation.longitude, place.lat, place.lon)
+            val direction = LocationUtils.bearingToDirection(bearing)
+            val distanceInfo = "${LocationUtils.formatDistance(result[0])} $direction"
+
+            val title = "Nearby: ${place.name} (${place.tripName})"
+            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(distanceInfo)
+                .setGroup(GROUP_KEY)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .build()
+
+            notificationManager.notify(SUMMARY_NOTIFICATION_ID + index + 1, notification)
+        }
+
+        val summaryIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            // Open the main activity not the map because there could be places of interests across multiple places
+            putExtra(Constants.EXTRA_SHOW_MAP, false)
+        }
+        val summaryPendingIntent =
+            PendingIntent.getActivity(context, 0, summaryIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+
+        // Create summary notification
+        val summaryText = places.joinToString("\n") { place ->
             val result = FloatArray(1)
             Location.distanceBetween(
                 userLocation.latitude, userLocation.longitude,
@@ -60,89 +109,36 @@ object NotificationUtils {
             val distanceInfo = "${LocationUtils.formatDistance(result[0])} $direction"
 
             val title = if (place.tripName.isNotEmpty()) "${place.name} (${place.tripName})" else place.name
-            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle(title)
-                .setContentText(distanceInfo)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
-
-            notificationManager.notify(SUMMARY_NOTIFICATION_ID, notification)
-
-            // Create standalone summary notification for single place too
-            val standaloneSummaryNotification = NotificationCompat.Builder(context, STANDALONE_SUMMARY_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle(title)
-                .setContentText(distanceInfo)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
-
-            notificationManager.notify(STANDALONE_SUMMARY_NOTIFICATION_ID, standaloneSummaryNotification)
-        } else {
-            // Multiple notifications - create group
-            places.forEachIndexed { index, place ->
-                val result = FloatArray(1)
-                Location.distanceBetween(
-                    userLocation.latitude, userLocation.longitude,
-                    place.lat, place.lon, result
-                )
-                val bearing = LocationUtils.calculateBearing(userLocation.latitude, userLocation.longitude, place.lat, place.lon)
-                val direction = LocationUtils.bearingToDirection(bearing)
-                val distanceInfo = "${LocationUtils.formatDistance(result[0])} $direction"
-
-                val title = if (place.tripName.isNotEmpty()) "${place.name} (${place.tripName})" else place.name
-                val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
-                    .setContentTitle(title)
-                    .setContentText(distanceInfo)
-                    .setGroup(GROUP_KEY)
-                    .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .build()
-
-                notificationManager.notify(SUMMARY_NOTIFICATION_ID + index + 1, notification)
-            }
-
-            // Create summary notification
-            val summaryText = places.joinToString("\n") { place ->
-                val result = FloatArray(1)
-                Location.distanceBetween(
-                    userLocation.latitude, userLocation.longitude,
-                    place.lat, place.lon, result
-                )
-                val bearing = LocationUtils.calculateBearing(userLocation.latitude, userLocation.longitude, place.lat, place.lon)
-                val direction = LocationUtils.bearingToDirection(bearing)
-                val distanceInfo = "${LocationUtils.formatDistance(result[0])} $direction"
-
-                val title = if (place.tripName.isNotEmpty()) "${place.name} (${place.tripName})" else place.name
-                "$title • $distanceInfo"
-            }
-
-            val summaryNotification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("${places.size} nearby places")
-                .setContentText("Tap to view all")
-                .setStyle(NotificationCompat.BigTextStyle().bigText(summaryText))
-                .setGroup(GROUP_KEY)
-                .setGroupSummary(true)
-                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .build()
-
-            notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryNotification)
-
-            // Create standalone summary notification (not part of group)
-            val standaloneSummaryNotification = NotificationCompat.Builder(context, STANDALONE_SUMMARY_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("${places.size} nearby places")
-                .setContentText("Tap to view all")
-                .setStyle(NotificationCompat.BigTextStyle().bigText(summaryText))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
-
-            notificationManager.notify(STANDALONE_SUMMARY_NOTIFICATION_ID, standaloneSummaryNotification)
+            "$title • $distanceInfo"
         }
+
+        val title = "${places.size} nearby place" + (if (places.size > 1) "s" else "")
+        val summaryNotification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText("Expand to view all / Tap to open app")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(summaryText))
+            .setGroup(GROUP_KEY)
+            .setGroupSummary(true)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setContentIntent(summaryPendingIntent)
+            .build()
+
+        notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryNotification)
+
+        // Create standalone summary notification (not part of group)
+        val standaloneSummaryNotification = NotificationCompat.Builder(context, STANDALONE_SUMMARY_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText("Tap to view all")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(summaryText))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(summaryPendingIntent)
+            .build()
+
+        notificationManager.notify(STANDALONE_SUMMARY_NOTIFICATION_ID, standaloneSummaryNotification)
     }
 
     private fun createNotificationChannel(context: Context) {

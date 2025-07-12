@@ -60,9 +60,10 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                                         allClosePlaces.add(
                                             PlaceNotificationInfo(
                                                 name = poi.name,
+                                                tripId = trip.id,
                                                 tripName = trip.name,
                                                 lat = poi.lat,
-                                                lon = poi.lon
+                                                lon = poi.lon,
                                             )
                                         )
                                     }

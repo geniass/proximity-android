@@ -55,12 +55,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.croock.proximity.util.GeofenceUtils
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.croock.proximity.data.ProximityDatabase
 import dev.croock.proximity.data.TripEntity
 import dev.croock.proximity.ui.theme.ProximityTheme
+import dev.croock.proximity.util.GeofenceUtils
 import dev.croock.proximity.util.NotificationUtils.showNotification
 import dev.croock.proximity.util.PlaceNotificationInfo
 import dev.croock.proximity.viewmodel.TripsListViewModel
@@ -77,9 +77,9 @@ import java.util.Locale
 // Define navigation routes
 object NavRoutes {
     const val TRIPS_LIST = "tripsList"
-    const val PLACES_OF_INTEREST = "placesOfInterest/{tripId}/{tripName}"
+    const val PLACES_OF_INTEREST = "placesOfInterest/{tripId}/{tripName}?showMap={showMap}"
 
-    fun placesOfInterestRoute(tripId: Long, tripName: String) = "placesOfInterest/$tripId/$tripName"
+    fun placesOfInterestRoute(tripId: Long, tripName: String, showMap: Boolean = false) = "placesOfInterest/$tripId/$tripName?showMap=$showMap"
 }
 
 class MainActivity : ComponentActivity() {
@@ -132,6 +132,19 @@ class MainActivity : ComponentActivity() {
         }
         requestNextPermission()
         getCurrentLocationAndCompare()
+
+        if (intent.getBooleanExtra(Constants.EXTRA_SHOW_MAP, false)) {
+            val tripId = intent.getLongExtra(Constants.EXTRA_TRIP_ID, 0L)
+            val tripName = intent.getStringExtra(Constants.EXTRA_TRIP_NAME) ?: "Unknown Trip"
+            Log.i(TAG, "Received intent to show map for trip $tripId: $tripName")
+            setContent {
+                ProximityTheme {
+                    val navController = rememberNavController()
+                    AppNavigator(navController = navController)
+                    navController.navigate(NavRoutes.placesOfInterestRoute(tripId, tripName, true))
+                }
+            }
+        }
     }
 
     private fun requestNextPermission() {
@@ -216,12 +229,15 @@ class MainActivity : ComponentActivity() {
                                 }
                                 closePlaces.forEach { poi ->
                                     Log.i(TAG, "Place within 500m: ${poi.name} at ${poi.lat},${poi.lon} (Trip: ${trip.name})")
-                                    allClosePlaces.add(PlaceNotificationInfo(
-                                        name = poi.name,
-                                        tripName = trip.name,
-                                        lat = poi.lat,
-                                        lon = poi.lon
-                                    ))
+                                    allClosePlaces.add(
+                                        PlaceNotificationInfo(
+                                            name = poi.name,
+                                            tripId = trip.id,
+                                            tripName = trip.name,
+                                            lat = poi.lat,
+                                            lon = poi.lon,
+                                        )
+                                    )
                                 }
                             }
                             if (allClosePlaces.isNotEmpty()) {
@@ -251,13 +267,15 @@ fun AppNavigator(navController: NavHostController) {
         composable(NavRoutes.PLACES_OF_INTEREST) { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId")?.toLongOrNull() ?: 0L
             val tripName = backStackEntry.arguments?.getString("tripName") ?: "Trip Details"
+            val showMap = backStackEntry.arguments?.getString("showMap")?.toBoolean() ?: false
             PlacesOfInterestScreen(
                 tripId = tripId,
                 tripName = tripName,
                 onNavigateBack = { navController.popBackStack() },
                 onOpenInMaps = { /* TODO */ },
                 onDeletePlace = { /* TODO */ },
-                onTogglePlaceStatus = { _, _ -> /* TODO */ }
+                onTogglePlaceStatus = { _, _ -> /* TODO */ },
+                showMap = showMap
             )
         }
     }

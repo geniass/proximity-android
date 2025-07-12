@@ -72,7 +72,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import dev.croock.proximity.ui.theme.ProximityTheme
 import dev.croock.proximity.viewmodel.PlacesOfInterestViewModel
 import dev.croock.proximity.viewmodel.PlacesOfInterestViewModelFactory
@@ -102,7 +102,8 @@ fun PlacesOfInterestScreen(
     onNavigateBack: () -> Unit,
     onOpenInMaps: (PointOfInterest) -> Unit,
     onDeletePlace: (PointOfInterest) -> Unit,
-    onTogglePlaceStatus: (PointOfInterest, Boolean) -> Unit
+    onTogglePlaceStatus: (PointOfInterest, Boolean) -> Unit,
+    showMap: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current.applicationContext as Application
@@ -111,7 +112,7 @@ fun PlacesOfInterestScreen(
     )
     val poiEntities by viewModel.pointsOfInterest.collectAsState()
     val places = poiEntities.map { it.toDomain() }
-    var showMapView by remember { mutableStateOf(false) }
+    var showMapView by remember { mutableStateOf(showMap) }
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 15f)
@@ -278,7 +279,7 @@ fun PlacesOfInterestScreen(
                         results[0]
                     }
                     Marker(
-                        state = rememberMarkerState(position = LatLng(place.lat, place.lon)),
+                        state = rememberUpdatedMarkerState(position = LatLng(place.lat, place.lon)),
                         title = place.name,
                         snippet = distance?.let { "%.2f".format(it / 1000) + " km" }
                     )
@@ -292,8 +293,7 @@ fun PlacesOfInterestScreen(
                     .padding(horizontal = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(places, key = { it.id }) {
-                    place ->
+                items(places, key = { it.id }) { place ->
                     PlaceOfInterestCard(
                         place = place,
                         currentLocation = currentLocation,
