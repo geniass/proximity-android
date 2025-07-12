@@ -1,6 +1,7 @@
 package dev.croock.proximity
 
 import android.app.Application
+import android.content.Intent
 import android.location.Location
 import android.util.Log
 import android.widget.Toast
@@ -54,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -100,13 +102,13 @@ fun PlacesOfInterestScreen(
     tripId: Long,
     tripName: String,
     onNavigateBack: () -> Unit,
-    onOpenInMaps: (PointOfInterest) -> Unit,
     showMap: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current.applicationContext as Application
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
     val viewModel: PlacesOfInterestViewModel = viewModel(
-        factory = PlacesOfInterestViewModelFactory(context, tripId)
+        factory = PlacesOfInterestViewModelFactory(application, tripId)
     )
     val poiEntities by viewModel.pointsOfInterest.collectAsState()
     val places = poiEntities.map { it.toDomain() }
@@ -295,7 +297,13 @@ fun PlacesOfInterestScreen(
                     PlaceOfInterestCard(
                         place = place,
                         currentLocation = currentLocation,
-                        onOpenInMaps = { onOpenInMaps(place) },
+                        onOpenInMaps = {
+                            val uri = "https://www.google.com/maps/dir/?api=1&destination=${place.name}&destination_place_id=${place.googlePlaceId}"
+                                .toUri()
+                            val mapIntent = Intent(Intent.ACTION_VIEW, uri)
+                            mapIntent.setPackage("com.google.android.apps.maps")
+                            context.startActivity(mapIntent)
+                        },
                         onDeletePlace = { viewModel.deletePlace(place.toEntity(tripId)) },
                         onToggleStatus = { newStatus ->
                             viewModel.togglePlaceStatus(place.toEntity(tripId), newStatus)
@@ -399,7 +407,6 @@ fun PlacesOfInterestScreenPreview() {
             tripId = 1L,
             tripName = "Tokyo",
             onNavigateBack = {},
-            onOpenInMaps = {},
         )
     }
 }

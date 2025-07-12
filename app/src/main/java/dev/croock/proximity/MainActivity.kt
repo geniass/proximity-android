@@ -272,7 +272,6 @@ fun AppNavigator(navController: NavHostController) {
                 tripId = tripId,
                 tripName = tripName,
                 onNavigateBack = { navController.popBackStack() },
-                onOpenInMaps = { /* TODO */ },
                 showMap = showMap
             )
         }
