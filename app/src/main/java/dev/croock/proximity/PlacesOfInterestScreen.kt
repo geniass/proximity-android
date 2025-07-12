@@ -101,8 +101,6 @@ fun PlacesOfInterestScreen(
     tripName: String,
     onNavigateBack: () -> Unit,
     onOpenInMaps: (PointOfInterest) -> Unit,
-    onDeletePlace: (PointOfInterest) -> Unit,
-    onTogglePlaceStatus: (PointOfInterest, Boolean) -> Unit,
     showMap: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
@@ -402,8 +400,6 @@ fun PlacesOfInterestScreenPreview() {
             tripName = "Tokyo",
             onNavigateBack = {},
             onOpenInMaps = {},
-            onDeletePlace = {},
-            onTogglePlaceStatus = { _, _ -> }
         )
     }
 }

@@ -273,8 +273,6 @@ fun AppNavigator(navController: NavHostController) {
                 tripName = tripName,
                 onNavigateBack = { navController.popBackStack() },
                 onOpenInMaps = { /* TODO */ },
-                onDeletePlace = { /* TODO */ },
-                onTogglePlaceStatus = { _, _ -> /* TODO */ },
                 showMap = showMap
             )
         }
