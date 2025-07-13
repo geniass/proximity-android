@@ -9,13 +9,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
+import android.os.Parcelable
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dev.croock.proximity.Constants
 import dev.croock.proximity.MainActivity
 import dev.croock.proximity.R
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class PlaceNotificationInfo(
     val name: String,
     val tripId: Long,
@@ -23,7 +26,7 @@ data class PlaceNotificationInfo(
     val lat: Double,
     val lon: Double,
     val googlePlaceId: String
-)
+) : Parcelable
 
 object NotificationUtils {
     private const val CHANNEL_ID = "geofence_places_channel"
@@ -56,9 +59,7 @@ object NotificationUtils {
         places.forEachIndexed { index, place ->
             val intent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra(Constants.EXTRA_SHOW_MAP, true)
-                putExtra(Constants.EXTRA_TRIP_ID, place.tripId)
-                putExtra(Constants.EXTRA_TRIP_NAME, place.tripName)
+                putExtra(Constants.EXTRA_PLACE_INFO, place)
             }
             val pendingIntent = PendingIntent.getActivity(
                 context,

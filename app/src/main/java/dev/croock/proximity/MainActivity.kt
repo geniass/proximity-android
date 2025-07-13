@@ -37,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,9 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 
 // Define navigation routes
 object NavRoutes {
@@ -112,6 +111,28 @@ class MainActivity : ComponentActivity() {
             ProximityTheme {
                 val navController = rememberNavController()
                 AppNavigator(navController = navController)
+
+                LaunchedEffect(Unit) {
+                    val placeInfo = intent.getParcelableExtra(
+                        Constants.EXTRA_PLACE_INFO,
+                        PlaceNotificationInfo::class.java
+                    )
+
+                    if (placeInfo != null) {
+                        navController.navigate(
+                            NavRoutes.placesOfInterestRoute(
+                                tripId = placeInfo.tripId,
+                                tripName = placeInfo.tripName,
+                                showMap = true,
+                            )
+                        )
+                    } else if (intent.getBooleanExtra(Constants.EXTRA_SHOW_MAP, false)) {
+                        val tripId = intent.getLongExtra(Constants.EXTRA_TRIP_ID, 0L)
+                        val tripName = intent.getStringExtra(Constants.EXTRA_TRIP_NAME) ?: "Unknown Trip"
+                        navController.navigate(NavRoutes.placesOfInterestRoute(tripId, tripName, true))
+                    }
+                }
+
                 if (showRationale) {
                     AlertDialog(
                         onDismissRequest = { showRationale = false },
@@ -132,19 +153,6 @@ class MainActivity : ComponentActivity() {
         }
         requestNextPermission()
         getCurrentLocationAndCompare()
-
-        if (intent.getBooleanExtra(Constants.EXTRA_SHOW_MAP, false)) {
-            val tripId = intent.getLongExtra(Constants.EXTRA_TRIP_ID, 0L)
-            val tripName = intent.getStringExtra(Constants.EXTRA_TRIP_NAME) ?: "Unknown Trip"
-            Log.i(TAG, "Received intent to show map for trip $tripId: $tripName")
-            setContent {
-                ProximityTheme {
-                    val navController = rememberNavController()
-                    AppNavigator(navController = navController)
-                    navController.navigate(NavRoutes.placesOfInterestRoute(tripId, tripName, true))
-                }
-            }
-        }
     }
 
     private fun requestNextPermission() {
@@ -273,7 +281,7 @@ fun AppNavigator(navController: NavHostController) {
                 tripId = tripId,
                 tripName = tripName,
                 onNavigateBack = { navController.popBackStack() },
-                showMap = showMap
+                showMap = showMap,
             )
         }
     }
@@ -350,27 +358,6 @@ fun TripsListScreen(onTripClick: (TripEntity) -> Unit) {
                     }
                 }
             }
-        }
-    }
-}
-
-// Minimal Trip data class
-data class Trip(
-    val name: String,
-    val startDate: LocalDate? = null,
-    val endDate: LocalDate? = null
-) {
-    val dateRangeString: String
-        get() = if (startDate != null && endDate != null) {
-            val formatter = DateTimeFormatter.ofPattern("E, d MMMM yyyy", Locale.ENGLISH)
-            val startStr = startDate.format(formatter)
-            val endStr = endDate.format(formatter)
-            "$startStr - $endStr"
-        } else ""
-
-    companion object {
-        fun create(name: String, startDate: LocalDate?, endDate: LocalDate?): Trip {
-            return Trip(name, startDate, endDate)
         }
     }
 }
