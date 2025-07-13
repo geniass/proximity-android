@@ -9,7 +9,8 @@ class ProximityRepository(app: Application) {
     private val poiDao = db.pointOfInterestDao()
 
     fun getAllTrips(): Flow<List<TripEntity>> = tripDao.getAllTrips()
-    fun getPointsOfInterestForTrip(tripId: Long): Flow<List<PointOfInterestEntity>> = poiDao.getPointsOfInterestForTrip(tripId)
+    fun getPointsOfInterestForTrip(tripId: Long, onlyActive: Boolean = false): Flow<List<PointOfInterestEntity>> =
+        poiDao.getPointsOfInterestForTrip(tripId, onlyActive)
 
     suspend fun insertTrip(trip: TripEntity): Long = tripDao.insertTrip(trip)
     suspend fun insertPointOfInterest(poi: PointOfInterestEntity): Long = poiDao.insertPointOfInterest(poi)

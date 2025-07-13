@@ -46,7 +46,7 @@ class GeofenceTransitionReceiver : BroadcastReceiver() {
                                 val trips = db.tripDao().getAllTrips().firstOrNull() ?: emptyList()
                                 val allClosePlaces = mutableListOf<PlaceNotificationInfo>()
                                 trips.forEach { trip ->
-                                    val places = db.pointOfInterestDao().getPointsOfInterestForTrip(trip.id).firstOrNull() ?: emptyList()
+                                    val places = db.pointOfInterestDao().getPointsOfInterestForTrip(trip.id, true).firstOrNull() ?: emptyList()
                                     val closePlaces = places.filter { poi ->
                                         val result = FloatArray(1)
                                         Location.distanceBetween(

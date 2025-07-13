@@ -51,18 +51,24 @@ This method ensures the app only performs location checks when the user has move
 - Asks for permissions when needed, and guides users to the correct settings page for background location permissions.
 - Persistent state across app restarts and device reboots.
 - Offline-first design: The app can function without an internet connection, relying on locally stored data for trips and places of interest.
+- Show distance and direction in notifications.
+- Add action buttons to notifications.
+- Group notifications for nearby places.
 
-## TODO Features
-- Allow distance from POI to be configurable per trip.
-- Allow importing or syncing trips with google maps saved places lists.
-- Trip-aware filtering - Only activate geofences for current/active trips, ignore inactive ones.
-- Cooldown periods - Prevent repeated notifications for same POI within time windows (e.g., 2 hours).
-- Context-aware filtering - Don't notify about restaurants during non-meal hours, or closed venues.
-- Background app limits - Adapt to Android's background execution restrictions on different API levels.
-- Distance and direction info - Show "350m northeast" instead of just place names in notifications.
-- Notification action buttons - Add "Navigate" and "Ignore/Deactivate" buttons to notifications.
-- Notification grouping - Bundle multiple nearby places into one expandable notification.
-- Smart timing - Avoid notification spam with cooldown periods.
+## TODO
+- **Code TODOs:**
+    - `app/src/main/java/dev/croock/proximity/MainActivity.kt`: Add trip functionality.
+    - `app/src/main/java/dev/croock/proximity/PlacesOfInterestScreen.kt`: Implement search for places of interest.
+    - `app/src/main/res/xml/data_extraction_rules.xml`: Configure backup rules.
+- **Feature TODOs:**
+    - Allow distance from POI to be configurable per trip.
+    - Allow importing or syncing trips with Google Maps saved places lists.
+    - Trip-aware filtering: Only activate geofences for current/active trips.
+    - Cooldown periods for notifications for the same POI.
+    - Context-aware filtering (e.g., for restaurants).
+    - Adapt to Android's background execution limits.
+    - Add "Ignore" action button to notifications
+    - Implement smart timing for notifications to avoid spam.
 
 ## Future Battery Optimization Ideas
 If further battery optimization is needed, these strategies could be implemented:
